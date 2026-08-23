@@ -1,3 +1,12 @@
+<div align="center">
+
+# $\textsf{\color{#FF5733}{\Huge HARSH KUMAR}}$
+# $\textsf{\color{#33C1FF}{\Huge REG NO: 250301120321}}$
+
+</div>
+
+<br>
+
 # Financial Literacy Chatbot 🤖💰
 
 ## Problem Statement
