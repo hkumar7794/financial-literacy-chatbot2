@@ -9,17 +9,19 @@ import random
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 ssl._create_default_https_context = ssl._create_unverified_context
-nltk.data.path.append(os.path.abspath("nltk_data"))
-nltk.download('punkt')
+nltk.data.path.append(os.path.join(BASE_DIR, "nltk_data"))
+nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
 
 # Load intents from the JSON file
-file_path = os.path.abspath("./intents.json")
-with open(file_path, "r") as file:
+file_path = os.path.join(BASE_DIR, "intents.json")
+with open(file_path, "r", encoding="utf-8") as file:
     intents = json.load(file)
 
-# Check the structure of the loaded intents
-print(intents)  
+chat_log_path = os.path.join(BASE_DIR, "chat_log.csv")  
 
 # Create the vectorizer and classifier
 vectorizer = TfidfVectorizer(ngram_range=(1, 4))
@@ -39,12 +41,12 @@ y = tags
 clf.fit(x, y)
 
 def chatbot(input_text):
-    input_text = vectorizer.transform([input_text])
-    tag = clf.predict(input_text)[0]
+    input_vec = vectorizer.transform([input_text])
+    tag = clf.predict(input_vec)[0]
     for intent in intents['intents']:  
         if intent['tag'] == tag:
-            response = random.choice(intent['responses'])
-            return response
+            return random.choice(intent['responses'])
+    return "I'm sorry, I didn't understand that. Please ask a financial question regarding budgeting, savings, investments, or loans."
 
 counter = 0
 
@@ -61,8 +63,8 @@ def main():
         st.write("Welcome to the chatbot. Please type a message and press Enter to start the conversation.")
 
         # Check if the chat_log.csv file exists, and if not, create it with column names
-        if not os.path.exists('chat_log.csv'):
-            with open('chat_log.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        if not os.path.exists(chat_log_path):
+            with open(chat_log_path, 'w', newline='', encoding='utf-8') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerow(['User Input', 'Chatbot Response', 'Timestamp'])
 
@@ -80,11 +82,11 @@ def main():
             timestamp = datetime.datetime.now().strftime(f"%Y-%m-%d %H:%M:%S")
 
             # Save the user input and chatbot response to the chat_log.csv file
-            with open('chat_log.csv', 'a', newline='', encoding='utf-8') as csvfile:
+            with open(chat_log_path, 'a', newline='', encoding='utf-8') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerow([user_input_str, response, timestamp])
 
-            if response.lower() in ['goodbye', 'bye']:
+            if response and response.lower() in ['goodbye', 'bye']:
                 st.write("Thank you for chatting with me. Have a great day!")
                 st.stop()
 
@@ -92,15 +94,25 @@ def main():
     elif choice == "Conversation History":
         # Display the conversation history in a collapsible expander
         st.header("Conversation History")
-        # with st.beta_expander("Click to see Conversation History"):
-        with open('chat_log.csv', 'r', encoding='utf-8') as csvfile:
-            csv_reader = csv.reader(csvfile)
-            next(csv_reader)  # Skip the header row
-            for row in csv_reader:
-                st.text(f"User: {row[0]}")
-                st.text(f"Chatbot: {row[1]}")
-                st.text(f"Timestamp: {row[2]}")
-                st.markdown("---")
+        if os.path.exists(chat_log_path):
+            with open(chat_log_path, 'r', encoding='utf-8') as csvfile:
+                csv_reader = csv.reader(csvfile)
+                try:
+                    next(csv_reader)  # Skip header row
+                    has_rows = False
+                    for row in csv_reader:
+                        if len(row) >= 3:
+                            has_rows = True
+                            st.text(f"User: {row[0]}")
+                            st.text(f"Chatbot: {row[1]}")
+                            st.text(f"Timestamp: {row[2]}")
+                            st.markdown("---")
+                    if not has_rows:
+                        st.info("No conversation history recorded yet.")
+                except StopIteration:
+                    st.info("No conversation history recorded yet.")
+        else:
+            st.info("No conversation history recorded yet.")
 
     elif choice == "About":
         st.title("About the Financial Literacy Chatbot")
