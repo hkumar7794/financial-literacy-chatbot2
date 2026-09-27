@@ -2,6 +2,10 @@
 
 # $\textsf{\color{#FF5733}{\Huge HARSH KUMAR}}$
 # $\textsf{\color{#33C1FF}{\Huge REG NO: 250301120321}}$
+# $\textsf{\color{#FF5733}{\Huge TARANGITA VERMA}}$
+# $\textsf{\color{#33C1FF}{\Huge REG NO: 250301120342}}$
+# $\textsf{\color{#FF5733}{\Huge KUNAL KUMAR}}$
+# $\textsf{\color{#33C1FF}{\Huge REG NO: 250301120352}}$
 
 <br>
 
