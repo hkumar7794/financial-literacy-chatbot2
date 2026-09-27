@@ -42,7 +42,7 @@ intents = load_intents()
 @st.cache_resource(show_spinner=False)
 def train_model():
     vectorizer = TfidfVectorizer(ngram_range=(1, 4))
-    clf = LogisticRegression(random_state=0, max_iter=10000)
+    clf = LogisticRegression(random_state=0, max_iter=10000, fit_intercept=False, C=5.0)
 
     tags = []
     patterns = []
@@ -64,12 +64,31 @@ def chatbot_predict(input_text):
         return "Please enter a valid question regarding personal finance.", "general"
 
     input_vec = vectorizer.transform([input_text])
-    tag = str(clf.predict(input_vec)[0])
+    
+    # Rank candidates by probability
+    probs = clf.predict_proba(input_vec)[0]
+    ranked_classes = sorted(zip(clf.classes_, probs), key=lambda x: x[1], reverse=True)
+    
+    greeting_keywords = {'hi', 'hello', 'hey', 'greetings', 'morning', 'evening', 'afternoon', 'howdy', 'sup', 'yo'}
+    user_words = set(''.join([c.lower() if c.isalnum() else ' ' for c in input_text]).split())
+    has_greeting_word = bool(user_words & greeting_keywords)
+
+    selected_tag = None
+    for tag_candidate, _ in ranked_classes:
+        tag_str = str(tag_candidate)
+        # Prevent false-positive greeting matches for non-greeting queries
+        if tag_str == 'greeting' and not has_greeting_word:
+            continue
+        selected_tag = tag_str
+        break
+
+    if not selected_tag:
+        selected_tag = str(ranked_classes[0][0])
 
     for intent in intents['intents']:
-        if intent['tag'] == tag:
+        if intent['tag'] == selected_tag:
             response = random.choice(intent['responses'])
-            return response, tag
+            return response, selected_tag
 
     fallback_response = (
         "I'm sorry, I couldn't find a direct answer to that. "
